@@ -37,6 +37,9 @@ server:
     include-message: never
 
 management:
+  health:
+    mail:
+      enabled: false   # SMTP is optional; an unconfigured mail host must not make the app report DOWN
   endpoints:
     web:
       exposure:
