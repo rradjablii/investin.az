@@ -1,6 +1,6 @@
 # Progress log
 
-Last updated: 2026-10-11. Repo: https://github.com/rradjablii/investin.az (branch `main`).
+Last updated: 2026-10-11 (evening). Repo: https://github.com/rradjablii/investin.az (branch `main`).
 
 ## Where things stand
 
@@ -32,6 +32,12 @@ saved/compare (price per m² only with a stated area, differing rows flagged), a
 Also fixed: server-rendered images could stay under a skeleton forever (hydration race in `PropertyImage`).
 Tests changed only where the design changed behaviour (selectors/mocks); new tests added. Not done: dark mode (not requested).
 
+## Safari fix (after the redesign)
+
+Pages loaded unstyled in Safari on http://localhost: the CSP sent `upgrade-insecure-requests`, so Safari rewrote asset URLs to
+https. It is now sent only for real HTTPS requests (`frontend/src/proxy.ts`), with an e2e assertion. Confirmed fixed by the user in Safari.
+Lesson: Playwright here runs Chromium only; Safari/WebKit has not been tested automatically (consider adding a WebKit project).
+
 ## Test status (last run)
 
 Backend 67 passed (not re-run after the frontend redesign) · frontend unit 66 passed · Playwright 22 passed · typecheck and lint clean · production build OK.
@@ -59,9 +65,10 @@ Tests: see README "Testing and checks". E2E writes rows into the dev DB; `script
 
 ## Candidate next steps
 
-1. Sourced neighborhood descriptions/boundaries (needs real, citable data).
-2. Real listing import from a permission-cleared source using `scripts/import_listings.py`.
-3. Production tile provider + real S3/R2 bucket + deploy to a host following `docs/DEPLOYMENT.md`.
-4. Manual accessibility pass and real-device testing.
-5. Spring Session (JDBC/Redis) and shared rate limiting before running multiple backend instances.
-6. Saved searches / alerts, price history, multi-language (deliberately deferred).
+1. Add a Playwright WebKit (Safari) project so browser-specific bugs like the CSP one are caught.
+2. Sourced neighborhood descriptions/boundaries (needs real, citable data).
+3. Real listing import from a permission-cleared source using `scripts/import_listings.py`.
+4. Production tile provider + real S3/R2 bucket + deploy to a host following `docs/DEPLOYMENT.md`.
+5. Manual accessibility pass and real-device testing.
+6. Spring Session (JDBC/Redis) and shared rate limiting before running multiple backend instances.
+7. Saved searches / alerts, price history, multi-language (deliberately deferred).
