@@ -4,11 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api";
 import { resetSavedStoreForTests } from "@/lib/saved";
-import { detail } from "./fixtures";
+import { detail, summary } from "./fixtures";
 
 const api = vi.hoisted(() => ({ fetchProperty: vi.fn(), postInquiry: vi.fn() }));
 vi.mock("@/lib/api", async (orig) => ({ ...(await orig<typeof import("@/lib/api")>()), ...api }));
-const server = vi.hoisted(() => ({ getProperty: vi.fn() }));
+const server = vi.hoisted(() => ({ getProperty: vi.fn(), getNeighborhood: vi.fn(), getNeighborhoodProperties: vi.fn() }));
 vi.mock("@/lib/server-api", () => server);
 vi.mock("@/components/property/LocationMapLoader", () => ({ default: () => <div data-testid="location-map" /> }));
 vi.mock("next/navigation", () => ({
@@ -23,14 +23,19 @@ import PropertyPage from "@/app/properties/[slug]/page";
 const wrap = (ui: React.ReactElement) =>
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
 
-beforeEach(() => { vi.clearAllMocks(); resetSavedStoreForTests(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  resetSavedStoreForTests();
+  server.getNeighborhood.mockResolvedValue(null);
+  server.getNeighborhoodProperties.mockResolvedValue([]);
+});
 
 describe("property detail page", () => {
   it("renders the stored property with source, last-checked date and honest gaps", async () => {
     server.getProperty.mockResolvedValue(detail({ bathrooms: null, areaSqm: null, developerName: null }));
     render(await PropertyPage({ params: Promise.resolve({ slug: "flat-1" }), searchParams: Promise.resolve({ from: "lat%3D40.4%26z%3D12" }) }));
     expect(screen.getByRole("heading", { level: 1, name: "Sunny flat" })).toBeInTheDocument();
-    expect(screen.getByText("$120,000")).toBeInTheDocument();
+    expect(screen.getAllByText("$120,000").length).toBeGreaterThanOrEqual(1); // header + mobile action bar
     expect(screen.getByText("Asking price in USD, as advertised")).toBeInTheDocument();
     expect(screen.getByText("Test agency")).toBeInTheDocument();
     expect(screen.getAllByText("Not stated").length).toBeGreaterThanOrEqual(3);
@@ -51,6 +56,24 @@ describe("property detail page", () => {
     render(await PropertyPage({ params: Promise.resolve({ slug: "flat-1" }), searchParams: Promise.resolve({}) }));
     expect(screen.getByText(/Fictional demonstration data/)).toBeInTheDocument();
     expect(screen.getByText(/Approximate location/)).toBeInTheDocument();
+  });
+
+  it("shows neighborhood context and related listings only from real data, never itself", async () => {
+    server.getProperty.mockResolvedValue(detail());
+    server.getNeighborhood.mockResolvedValue({ name: "Nasimi", nearbyPlaces: [{ name: "28 May Metro", category: "transport", sourceName: "City dataset" }] });
+    server.getNeighborhoodProperties.mockResolvedValue([summary({ slug: "flat-1" }), summary({ slug: "other", title: "Other flat", askingPrice: 99000 })]);
+    render(await PropertyPage({ params: Promise.resolve({ slug: "flat-1" }), searchParams: Promise.resolve({}) }));
+    expect(screen.getByText("28 May Metro")).toBeInTheDocument();
+    expect(screen.getByText(/source: City dataset/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Other flat/ })).toHaveAttribute("href", "/properties/other");
+    expect(screen.queryByRole("link", { name: /Sunny flat/ })).not.toBeInTheDocument();
+  });
+
+  it("omits context sections when there is nothing real to show", async () => {
+    server.getProperty.mockResolvedValue(detail());
+    render(await PropertyPage({ params: Promise.resolve({ slug: "flat-1" }), searchParams: Promise.resolve({}) }));
+    expect(screen.queryByText(/Nearby places/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/More apartment listings/)).not.toBeInTheDocument();
   });
 
   it("triggers the not-found (unavailable) state for unpublished or unknown slugs", async () => {
@@ -140,5 +163,25 @@ describe("saved properties page", () => {
     const boxes = screen.getAllByRole("checkbox", { name: "Compare" });
     for (const b of boxes.slice(0, 4)) await userEvent.click(b);
     expect(boxes[4]).toBeDisabled();
+  });
+});
+
+describe("comparison table", () => {
+  it("derives price per m² only when an area is stated and flags rows that differ", async () => {
+    window.localStorage.setItem("investin.saved.v1", JSON.stringify(["a", "b"]));
+    api.fetchProperty.mockImplementation(async (slug: string) =>
+      detail({ slug, title: `Flat ${slug}`, askingPrice: slug === "a" ? 100000 : 150000, areaSqm: slug === "a" ? 50 : null, bedrooms: 2, currency: "USD" }));
+    wrap(<SavedApp />);
+    await screen.findByText("Flat a");
+    const boxes = screen.getAllByRole("checkbox", { name: "Compare" });
+    await userEvent.click(boxes[0]);
+    await userEvent.click(boxes[1]);
+    await userEvent.click(screen.getByRole("button", { name: /Compare \(2\)/ }));
+    const table = await screen.findByRole("table");
+    const ppm = within(table).getByRole("row", { name: /Price per m²/ });
+    expect(within(ppm).getByText("$2,000 / m²")).toBeInTheDocument();
+    expect(within(ppm).getByText("Not stated")).toBeInTheDocument(); // no area → no invented figure
+    expect(within(within(table).getByRole("row", { name: /Bedrooms/ })).queryByText("differs")).not.toBeInTheDocument();
+    expect(within(within(table).getByRole("row", { name: /Asking price/ })).getByText("differs")).toBeInTheDocument();
   });
 });

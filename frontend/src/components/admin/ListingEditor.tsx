@@ -20,13 +20,13 @@ const EMPTY: ListingForm = {
   areaSqm: null, landAreaSqm: null, bedrooms: null, bathrooms: null,
 };
 
-const inp = "mt-1 h-10 w-full rounded-md border border-line-2 bg-surface px-3 text-sm font-normal";
+const inp = "mt-1 h-10 w-full rounded-md border border-line-2 bg-surface px-3 text-body font-normal";
 const num = (v: string) => (v === "" ? null : Number(v));
 const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 const fromDateInput = (d: string) => (d ? `${d}T00:00:00Z` : null);
 
 function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return <label className={`block text-sm font-medium ${wide ? "sm:col-span-2" : ""}`}>{label}{children}</label>;
+  return <label className={`block text-body font-medium ${wide ? "sm:col-span-2" : ""}`}>{label}{children}</label>;
 }
 
 export default function ListingEditor({ id }: { id?: string }) {
@@ -68,7 +68,7 @@ export default function ListingEditor({ id }: { id?: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">{id ? "Edit listing" : "New listing"}</h1>
+        <h1 className="text-[1.5rem] font-semibold">{id ? "Edit listing" : "New listing"}</h1>
         {l && <StatusBadge status={l.status} />}
         {l?.demonstration && <span className="rounded bg-warn-bg px-2 text-xs text-warn-ink">fictional demo data</span>}
         {l?.status === "published" && <Link className="ml-auto text-sm text-accent hover:underline" href={`/properties/${l.propertySlug}`}>View public page</Link>}
@@ -80,7 +80,7 @@ export default function ListingEditor({ id }: { id?: string }) {
         </div>
       )}
 
-      <form className="grid gap-4 rounded-lg border border-line bg-surface p-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+      <form className="grid gap-4 rounded-xl border border-line bg-surface p-4 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <Field label="Title" wide><input required className={inp} value={form.title} onChange={(e) => set("title", e.target.value)} /></Field>
         <Field label="Description (min. 20 characters to publish)" wide>
           <textarea rows={4} className={`${inp} h-auto py-2`} value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} /></Field>
@@ -108,7 +108,7 @@ export default function ListingEditor({ id }: { id?: string }) {
 
       {l && (
         <>
-          <section aria-labelledby="wf" className="rounded-lg border border-line bg-surface p-4">
+          <section aria-labelledby="wf" className="rounded-xl border border-line bg-surface p-4">
             <h2 id="wf" className="text-lg font-semibold">Workflow</h2>
             <p className="text-sm text-ink-2">Draft → Review → Published. Publishing is re-validated on the server and requires administrator rights.</p>
             {l.reviewNote && <p className="mt-2 rounded bg-warn-bg p-2 text-sm text-warn-ink">Note: {l.reviewNote}</p>}
@@ -136,7 +136,7 @@ export default function ListingEditor({ id }: { id?: string }) {
 
           <MediaManager listing={l} onChange={refresh} onError={onError} />
 
-          <section aria-labelledby="hist" className="rounded-lg border border-line bg-surface p-4 text-sm">
+          <section aria-labelledby="hist" className="rounded-xl border border-line bg-surface p-4 text-sm">
             <h2 id="hist" className="text-lg font-semibold">History</h2>
             <ul className="mt-2 space-y-1">
               {l.history.map((h, i) => <li key={i}>{formatDate(h.changedAt)} — {h.fromStatus ?? "new"} → <b>{h.toStatus}</b> by {h.changedBy}{h.note ? ` (${h.note})` : ""}</li>)}
@@ -167,7 +167,7 @@ function MediaManager({ listing, onChange, onError }: { listing: AdminListing; o
   const patch = (mediaId: string, json: unknown) => adminFetch<AdminListing>(`/api/v1/admin/media/${mediaId}`, { method: "PATCH", json }).then(onChange).catch(onError);
   const remove = (mediaId: string) => adminFetch<AdminListing>(`/api/v1/admin/media/${mediaId}`, { method: "DELETE" }).then(onChange).catch(onError);
   return (
-    <section aria-labelledby="media" className="rounded-lg border border-line bg-surface p-4">
+    <section aria-labelledby="media" className="rounded-xl border border-line bg-surface p-4">
       <h2 id="media" className="text-lg font-semibold">Photographs</h2>
       <p className="text-sm text-ink-2">JPEG, PNG or WebP up to 8 MB. Every image needs alt text and a rights reference (who owns it and the permission to use it).</p>
       <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

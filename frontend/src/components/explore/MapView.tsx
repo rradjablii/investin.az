@@ -11,12 +11,14 @@ import type { MapViewProps } from "./mapTypes";
 const SOURCE = "properties";
 const SELECTED_SOURCE = "selected-property";
 const FONT = process.env.NEXT_PUBLIC_MAP_FONT ?? "Noto Sans Bold";
-const ACCENT = "#0f5f5a";
+const ACCENT = "#526c63";
+const INK = "#20242a";
+const HOVER_SOURCE = "hover-property";
 
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 /** Draws a stretchable rounded "price pill" for icon-text-fit. */
-function pillImage(fill: string, stroke: string): ImageData {
+function pillImage(fill: string, stroke: string, lineWidth = 2): ImageData {
   const w = 64, h = 48, r = 14;
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
@@ -25,7 +27,7 @@ function pillImage(fill: string, stroke: string): ImageData {
   ctx.roundRect(3, 3, w - 6, h - 6, r);
   ctx.fillStyle = fill;
   ctx.fill();
-  ctx.lineWidth = 3;
+  ctx.lineWidth = lineWidth;
   ctx.strokeStyle = stroke;
   ctx.stroke();
   return ctx.getImageData(0, 0, w, h);
@@ -46,15 +48,27 @@ function toGeoJSON(markers: MapViewProps["markers"]): GeoJSON.FeatureCollection 
   };
 }
 
-export default function MapView({ markers, selectedSlug, onSelect, initialView, command, onViewChange, onError }: MapViewProps) {
+/** Gentle, low-saturation tweaks on top of the provider's light style (each guarded: other styles may lack these layers). */
+function softenStyle(map: MlMap) {
+  const set = (layer: string, prop: string, value: string) => {
+    try { if (map.getLayer(layer)) map.setPaintProperty(layer, prop as "fill-color", value); } catch { /* style variant without this layer */ }
+  };
+  set("water", "fill-color", "#d6dfe7");
+  set("waterway", "line-color", "#d6dfe7");
+  set("background", "background-color", "#f3f4f4");
+  set("park", "fill-color", "#e7ebe6");
+  set("building", "fill-color", "#ecece8");
+}
+
+export default function MapView({ markers, selectedSlug, hoveredSlug, onHover, onSelect, initialView, command, onViewChange, onError }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const readyRef = useRef(false);
   // Latest props for event handlers registered once.
-  const latest = useRef({ markers, selectedSlug, onSelect, onViewChange, onError });
+  const latest = useRef({ markers, selectedSlug, hoveredSlug, onHover, onSelect, onViewChange, onError });
   const lastCommand = useRef<number>(-1);
   useEffect(() => {
-    latest.current = { markers, selectedSlug, onSelect, onViewChange, onError };
+    latest.current = { markers, selectedSlug, hoveredSlug, onHover, onSelect, onViewChange, onError };
   });
 
   useEffect(() => {
@@ -88,26 +102,30 @@ export default function MapView({ markers, selectedSlug, onSelect, initialView, 
     };
 
     map.on("load", () => {
-      map.addImage("pill", pillImage("#ffffff", "#44403c"), {
+      map.addImage("pill", pillImage("#ffffff", "#bfc6cf"), {
+        pixelRatio: 2, stretchX: [[20, 44]], stretchY: [[16, 32]], content: [20, 16, 44, 32],
+      });
+      map.addImage("pill-hover", pillImage("#eceff2", "#858d98"), {
         pixelRatio: 2, stretchX: [[20, 44]], stretchY: [[16, 32]], content: [20, 16, 44, 32],
       });
       map.addImage("pill-selected", pillImage(ACCENT, "#ffffff"), {
         pixelRatio: 2, stretchX: [[20, 44]], stretchY: [[16, 32]], content: [20, 16, 44, 32],
       });
+      softenStyle(map);
       map.addSource(SOURCE, {
         type: "geojson", data: toGeoJSON(latest.current.markers), cluster: true, clusterRadius: 48, clusterMaxZoom: 14,
       });
       map.addLayer({
         id: "clusters", type: "circle", source: SOURCE, filter: ["has", "point_count"],
         paint: {
-          "circle-color": ACCENT, "circle-opacity": 0.92, "circle-stroke-color": "#ffffff", "circle-stroke-width": 2,
-          "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 30, 25],
+          "circle-color": "#ffffff", "circle-stroke-color": "#bfc6cf", "circle-stroke-width": 1.5,
+          "circle-radius": ["step", ["get", "point_count"], 15, 10, 19, 30, 24],
         },
       });
       map.addLayer({
         id: "cluster-count", type: "symbol", source: SOURCE, filter: ["has", "point_count"],
         layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": [FONT], "text-size": 13, "text-allow-overlap": true },
-        paint: { "text-color": "#ffffff" },
+        paint: { "text-color": INK },
       });
       map.addLayer({
         id: "prices", type: "symbol", source: SOURCE, filter: ["!", ["has", "point_count"]],
@@ -116,7 +134,16 @@ export default function MapView({ markers, selectedSlug, onSelect, initialView, 
           "text-field": ["get", "label"], "text-font": [FONT], "text-size": 12.5,
           "icon-allow-overlap": true, "text-allow-overlap": true, "symbol-sort-key": ["-", 0, ["get", "price"]],
         },
-        paint: { "text-color": "#1c1917" },
+        paint: { "text-color": INK },
+      });
+      map.addSource(HOVER_SOURCE, { type: "geojson", data: selectedGeoJSON([], null) });
+      map.addLayer({
+        id: "prices-hover", type: "symbol", source: HOVER_SOURCE,
+        layout: {
+          "icon-image": "pill-hover", "icon-text-fit": "both", "icon-text-fit-padding": [3, 8, 3, 8],
+          "text-field": ["get", "label"], "text-font": [FONT], "text-size": 12.5, "icon-allow-overlap": true, "text-allow-overlap": true,
+        },
+        paint: { "text-color": INK },
       });
       // The selected marker lives in its own un-clustered source so it stays visible even when its neighbours are clustered.
       map.addSource(SELECTED_SOURCE, { type: "geojson", data: selectedGeoJSON(latest.current.markers, latest.current.selectedSlug) });
@@ -150,6 +177,8 @@ export default function MapView({ markers, selectedSlug, onSelect, initialView, 
       const hit = map.queryRenderedFeatures(e.point, { layers: ["clusters", "prices", "prices-selected"] });
       if (hit.length === 0) latest.current.onSelect(null);
     });
+    map.on("mousemove", "prices", (e) => latest.current.onHover(((e.features?.[0]?.properties?.slug as string | undefined) ?? null)));
+    map.on("mouseleave", "prices", () => latest.current.onHover(null));
     for (const layer of ["clusters", "prices", "prices-selected"]) {
       map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
@@ -193,6 +222,14 @@ export default function MapView({ markers, selectedSlug, onSelect, initialView, 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSlug]);
+
+  // hovered card / marker -> hover layer (not for the selected one, which is already emphasised)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !readyRef.current) return;
+    const slug = hoveredSlug && hoveredSlug !== selectedSlug ? hoveredSlug : null;
+    (map.getSource(HOVER_SOURCE) as GeoJSONSource | undefined)?.setData(selectedGeoJSON(markers, slug));
+  }, [hoveredSlug, selectedSlug, markers]);
 
   // imperative commands (search suggestion, neighbourhood, URL navigation)
   useEffect(() => {

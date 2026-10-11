@@ -23,9 +23,18 @@ inquiry e-mail, admin user management, production-readiness items) is also done.
    S3-compatible storage (tested on Adobe S3Mock), nonce-based CSP, deployment notes.
 6. **Housekeeping** — git init, pushed to GitHub; fixed mail health check reporting DOWN without SMTP.
 
+## Frontend redesign (from `frontend-prompt.md`) — done
+
+New tokens/typography (`docs/DESIGN_SYSTEM.md`), restyled explore (map left, results right, toolbar chips, hover sync, reset-view,
+collapsible panel, segmented mobile switch), calmer cards/preview/filter dialog, redesigned detail page (neighborhood context and
+related listings from real data, sticky mobile contact bar), neighborhood directory/detail (overview map, boundary only if real data),
+saved/compare (price per m² only with a stated area, differing rows flagged), about, admin via tokens.
+Also fixed: server-rendered images could stay under a skeleton forever (hydration race in `PropertyImage`).
+Tests changed only where the design changed behaviour (selectors/mocks); new tests added. Not done: dark mode (not requested).
+
 ## Test status (last run)
 
-Backend 67 passed · frontend unit 63 passed · Playwright 17 passed · typecheck and lint clean · production build OK.
+Backend 67 passed (not re-run after the frontend redesign) · frontend unit 66 passed · Playwright 22 passed · typecheck and lint clean · production build OK.
 
 ## How to start tomorrow
 

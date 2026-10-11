@@ -15,6 +15,14 @@ type Entry = { slug: string; state: "loading" | "ok" | "unavailable" | "error"; 
 
 const ROWS: { label: string; value: (p: PropertyDetail) => string | null }[] = [
   { label: "Asking price", value: (p) => `${formatPrice(p.askingPrice, p.currency)} (${p.currency})` },
+  {
+    // Derived only when an area is stated; stays in the listing's own currency, so it is comparable only across equal currencies.
+    label: "Price per m²",
+    value: (p) => {
+      const area = p.propertyType === "land" ? p.landAreaSqm : p.areaSqm;
+      return area ? `${formatPrice(p.askingPrice / area, p.currency)} / m²` : null;
+    },
+  },
   { label: "Property type", value: (p) => TYPE_LABELS[p.propertyType] },
   { label: "Floor area", value: (p) => formatArea(p.areaSqm) },
   { label: "Land area", value: (p) => formatArea(p.landAreaSqm) },
@@ -55,8 +63,8 @@ export default function SavedApp() {
   if (slugs.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight">Saved properties</h1>
-        <StateMessage title="Nothing saved yet" action={<Link href="/explore" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-ink">Explore the map</Link>}>
+        <h1 className="text-[1.75rem] font-semibold sm:text-[2rem]">Saved properties</h1>
+        <StateMessage title="Nothing saved yet" action={<Link href="/explore" className="rounded-md bg-accent px-4 py-2 text-body font-medium text-accent-ink">Explore the map</Link>}>
           Use the bookmark on any property to keep it here. Saved properties live in this browser only.
         </StateMessage>
       </div>
@@ -67,8 +75,8 @@ export default function SavedApp() {
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Saved properties</h1>
-          <p className="mt-1 text-sm text-ink-2">Stored in this browser only — they won&apos;t appear on other devices. Select up to {MAX_COMPARE} to compare.</p>
+          <h1 className="text-[1.75rem] font-semibold sm:text-[2rem]">Saved properties</h1>
+          <p className="mt-1 text-body text-ink-2">Stored in this browser only — they won&apos;t appear on other devices. Select up to {MAX_COMPARE} to compare.</p>
         </div>
         <PrimaryButton disabled={compare.length < 2} onClick={() => setShowCompare(true)}>
           <GitCompare className="h-4 w-4" aria-hidden /> Compare ({compare.length})
@@ -76,13 +84,13 @@ export default function SavedApp() {
       </div>
 
       {showCompare && compared.length >= 2 && (
-        <section aria-labelledby="cmp-h" className="mt-5 rounded-lg border border-line bg-surface">
+        <section aria-labelledby="cmp-h" className="mt-5 rounded-xl border border-line bg-surface">
           <div className="flex items-center justify-between border-b border-line p-3">
             <h2 id="cmp-h" className="font-semibold">Comparison</h2>
             <SecondaryButton onClick={() => setShowCompare(false)}>Close</SecondaryButton>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="w-full min-w-[560px] text-left text-body">
               <thead>
                 <tr className="border-b border-line">
                   <th scope="col" className="p-3 font-normal text-ink-3"><span className="sr-only">Field</span></th>
@@ -94,35 +102,38 @@ export default function SavedApp() {
                 </tr>
               </thead>
               <tbody>
-                {ROWS.map((r) => (
-                  <tr key={r.label} className="border-b border-line last:border-0">
-                    <th scope="row" className="p-3 font-normal text-ink-3">{r.label}</th>
-                    {compared.map((p) => {
-                      const v = r.value(p);
-                      return <td key={p.slug} className={`p-3 ${v === null ? "text-ink-3" : ""}`}>{v ?? "Not stated"}</td>;
-                    })}
-                  </tr>
-                ))}
+                {ROWS.map((r) => {
+                  const values = compared.map((p) => r.value(p));
+                  const differs = new Set(values.map((v) => v ?? "—")).size > 1;
+                  return (
+                    <tr key={r.label} className={`border-b border-line last:border-0 ${differs ? "bg-accent-soft/60" : ""}`}>
+                      <th scope="row" className="p-3 text-left font-normal text-ink-2">{r.label}{differs && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs font-medium text-accent-hover">differs</span>}</th>
+                      {compared.map((p, i) => (
+                        <td key={p.slug} className={`p-3 tabular-nums ${values[i] === null ? "text-ink-3" : ""}`}>{values[i] ?? "Not stated"}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-          <p className="p-3 text-xs text-ink-3">Prices are shown in their original currencies and are not converted, so compare them only when currencies match.</p>
+          <p className="p-3 text-xs text-ink-3">Prices are shown in their original currencies and are not converted, so compare prices (and price per m²) only when currencies match. Price per m² is the asking price divided by the stated area; it is left blank when no area is stated.</p>
         </section>
       )}
 
       <ul className="mt-5 grid gap-4 sm:grid-cols-2" aria-label="Saved properties">
         {entries.map((e) => (
-          <li key={e.slug} data-testid="saved-item" className="overflow-hidden rounded-lg border border-line bg-surface">
+          <li key={e.slug} data-testid="saved-item" className="overflow-hidden rounded-xl border border-line bg-surface">
             {e.state === "ok" && e.data ? (
               <>
-                <PropertyImage src={e.data.images[0]?.url} alt={e.data.images[0]?.alt ?? ""} className="aspect-[16/9] w-full" />
+                <PropertyImage src={e.data.images[0]?.url} alt={e.data.images[0]?.alt ?? ""} className="aspect-[3/2] w-full" />
                 <div className="space-y-2 p-3">
-                  <p className="text-lg font-semibold tabular-nums">{formatPrice(e.data.askingPrice, e.data.currency)}</p>
-                  <p className="text-sm">{e.data.title}</p>
-                  <p className="text-sm text-ink-2">{TYPE_LABELS[e.data.propertyType]} · {e.data.neighborhood?.name ?? "Baku"}</p>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-sm">
-                    <Link href={`/properties/${e.slug}`} className="font-medium text-accent hover:underline">View details</Link>
-                    <Link href={`/explore?sel=${encodeURIComponent(e.slug)}`} className="font-medium text-accent hover:underline">Show on map</Link>
+                  <p className="text-[1.1875rem] font-semibold tabular-nums">{formatPrice(e.data.askingPrice, e.data.currency)}</p>
+                  <p className="text-body">{e.data.title}</p>
+                  <p className="text-body text-ink-2">{TYPE_LABELS[e.data.propertyType]} · {e.data.neighborhood?.name ?? "Baku"}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1 text-body">
+                    <Link href={`/properties/${e.slug}`} className="font-medium text-accent hover:text-accent-hover hover:underline">View details</Link>
+                    <Link href={`/explore?sel=${encodeURIComponent(e.slug)}`} className="font-medium text-accent hover:text-accent-hover hover:underline">Show on map</Link>
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={compare.includes(e.slug)} disabled={!compare.includes(e.slug) && compare.length >= MAX_COMPARE}
                         onChange={() => toggleCompare(e.slug)} />

@@ -17,7 +17,7 @@ export function StatusBadge({ status }: { status: string }) {
 export function ListingTable({ rows }: { rows: AdminListingRow[] }) {
   if (rows.length === 0) return <p className="rounded-md border border-line bg-surface p-4 text-sm text-ink-2">Nothing here.</p>;
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+    <div className="overflow-x-auto rounded-xl border border-line bg-surface">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead className="border-b border-line text-ink-3">
           <tr><th scope="col" className="p-3 font-normal">Listing</th><th scope="col" className="p-3 font-normal">Status</th><th scope="col" className="p-3 font-normal">Price</th><th scope="col" className="p-3 font-normal">Last checked</th><th scope="col" className="p-3 font-normal">Note</th></tr>

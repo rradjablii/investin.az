@@ -26,7 +26,7 @@ export default function AdminListings({ mode }: { mode: "all" | "review" }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{mode === "review" ? "Review queue" : "Listings"}</h1>
+        <h1 className="text-[1.5rem] font-semibold">{mode === "review" ? "Review queue" : "Listings"}</h1>
         <Link href="/admin/listings/new" className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink">New listing</Link>
       </div>
       {mode === "review" && <p className="text-sm text-ink-2">Listings awaiting review, flagged as possibly stale, or published but not re-checked recently.</p>}

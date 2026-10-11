@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { List, Map as MapIcon, SlidersHorizontal, TriangleAlert } from "lucide-react";
+import { List, LocateFixed, Map as MapIcon, PanelRightClose, PanelRightOpen, SlidersHorizontal, TriangleAlert, X } from "lucide-react";
 import MapViewLoader from "./MapViewLoader";
 import type { MapCommand } from "./mapTypes";
 import ResultsPanel from "./ResultsPanel";
@@ -41,6 +41,8 @@ export default function ExploreApp() {
   const [mapFailure, setMapFailure] = useState<string | null>(null);
   const [tileNotice, setTileNotice] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(true);
   const [command, setCommand] = useState<MapCommand | null>(null);
   const commandId = useRef(0);
   const moveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -163,73 +165,107 @@ export default function ExploreApp() {
   const queryError = (listQ.error ?? null) as Error | null;
 
   return (
-    <div className="relative grid h-full grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)]">
-      {/* Toolbar */}
-      <div className="z-20 col-span-full flex items-center gap-2 border-b border-line bg-surface p-2 md:col-span-1 md:col-start-1 md:row-start-1">
-        <SearchBox onPick={onPickSuggestion} />
-        <button type="button" onClick={() => setFiltersOpen(true)}
-          className="relative inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-line-2 bg-surface px-3 text-sm font-medium hover:bg-bg">
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters
-          {filterCount(filters) > 0 && (
-            <span className="rounded-full bg-accent px-1.5 text-xs text-accent-ink" aria-label={`${filterCount(filters)} active`}>{filterCount(filters)}</span>
-          )}
-        </button>
+    <div className={`relative grid h-full grid-rows-[auto_minmax(0,1fr)] ${panelOpen ? "md:grid-cols-[minmax(0,1fr)_minmax(340px,380px)] lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_460px]" : "md:grid-cols-1"}`}>
+      {/* Toolbar: search, filters, active filters */}
+      <div className="z-20 col-span-full border-b border-line bg-surface">
+        <div className="flex items-center gap-2 px-3 py-2.5 sm:px-4">
+          <div className="min-w-0 flex-1 md:max-w-xl"><SearchBox onPick={onPickSuggestion} /></div>
+          <button type="button" onClick={() => setFiltersOpen(true)}
+            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-line-2 bg-surface px-3.5 text-body font-medium hover:bg-hover">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            Filters
+            {filterCount(filters) > 0 && (
+              <span className="rounded-full bg-accent px-1.5 text-xs text-accent-ink" aria-label={`${filterCount(filters)} active`}>{filterCount(filters)}</span>
+            )}
+          </button>
+        </div>
+        {chips.length > 0 && (
+          <ul aria-label="Active filters" className="flex flex-wrap items-center gap-1.5 px-3 pb-2.5 sm:px-4">
+            {chips.map((c) => (
+              <li key={c.id}>
+                <button type="button" onClick={() => applyFilters(removeChip(filters, c.id))} aria-label={`Remove filter ${c.label}`}
+                  className="inline-flex min-h-8 items-center gap-1 rounded-md border border-line-2 bg-surface-2 py-1 pl-2.5 pr-1.5 text-sm hover:bg-hover">
+                  {c.label} <X className="h-3.5 w-3.5 text-ink-3" aria-hidden />
+                </button>
+              </li>
+            ))}
+            <li><button type="button" onClick={() => applyFilters({ ...EMPTY_FILTERS })} className="px-2 text-sm font-medium text-accent hover:text-accent-hover hover:underline">Reset all</button></li>
+          </ul>
+        )}
       </div>
 
+      {/* Map */}
+      <section aria-label="Map" className={`${showList ? "hidden md:block" : "block"} relative row-start-2 min-h-0 md:col-start-1`}>
+        {mapFailed ? (
+          <div role="alert" className="flex h-full flex-col items-center justify-center gap-2 bg-bg p-6 text-center">
+            <TriangleAlert className="h-8 w-8 text-warn-ink" aria-hidden />
+            <p className="font-medium">The map couldn&apos;t be displayed</p>
+            <p className="max-w-sm text-body text-ink-2">{mapFailure}. You can keep browsing every property in the list.</p>
+          </div>
+        ) : (
+          <MapViewLoader markers={markers} selectedSlug={selectedSlug} onSelect={select} hoveredSlug={hoveredSlug} onHover={setHoveredSlug}
+            initialView={urlView ?? DEFAULT_VIEW} command={command} onViewChange={onViewChange}
+            onError={(msg, fatal) => { if (fatal) setMapFailure(msg); else setTileNotice(true); }} />
+        )}
+
+        {!mapFailed && (
+          <div className="absolute right-2.5 top-[84px] z-10 flex flex-col gap-2">
+            <button type="button" onClick={() => issue({ kind: "fly", view: DEFAULT_VIEW })} aria-label="Reset map to Baku" title="Reset map to Baku"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-surface text-ink-2 shadow-float hover:bg-hover hover:text-ink">
+              <LocateFixed className="h-[18px] w-[18px]" aria-hidden />
+            </button>
+          </div>
+        )}
+        <button type="button" onClick={() => setPanelOpen((o) => !o)} aria-pressed={!panelOpen}
+          className="absolute bottom-9 right-3 z-10 hidden h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-medium text-ink-2 shadow-float hover:bg-hover md:inline-flex">
+          {panelOpen ? <PanelRightClose className="h-4 w-4" aria-hidden /> : <PanelRightOpen className="h-4 w-4" aria-hidden />}
+          {panelOpen ? "Hide results" : "Show results"}
+        </button>
+
+        {tileNotice && !mapFailed && (
+          <p role="status" className="absolute left-3 top-3 rounded-md bg-warn-bg px-2.5 py-1 text-xs text-warn-ink">Some map tiles failed to load. Properties are still listed.</p>
+        )}
+        {markersQ.data?.truncated && (
+          <p className="absolute left-3 top-3 rounded-md border border-line bg-surface px-2.5 py-1 text-xs text-ink-2 shadow-float">Showing the first {markersQ.data.markers.length.toLocaleString("en")} of {markersQ.data.total.toLocaleString("en")} on the map — zoom in to see more.</p>
+        )}
+        {markersQ.isError && !mapFailed && (
+          <p role="alert" className="absolute left-3 top-3 rounded-md bg-danger-soft px-2.5 py-1 text-xs text-danger">Couldn&apos;t refresh map markers.</p>
+        )}
+
+        {selected && !showList && (
+          <div className="pointer-events-none absolute inset-x-3 bottom-[72px] z-10 md:inset-x-auto md:bottom-6 md:left-4 md:w-[400px]">
+            <SelectedPreview property={selected} detailHref={detailHref(selected.slug)} onClose={() => select(null)} />
+          </div>
+        )}
+      </section>
+
       {/* Results */}
-      <section aria-label="Results" className={`${showList ? "block" : "hidden"} row-start-2 min-h-0 border-line md:col-start-1 md:block md:border-r`}>
+      <section aria-label="Results" className={`${showList ? "block" : "hidden"} row-start-2 min-h-0 border-line ${panelOpen ? "md:col-start-2 md:block md:border-l" : "md:hidden"}`}>
         <ResultsPanel
           items={items} total={total} isLoading={listQ.isPending && queriesEnabled || !queriesEnabled}
           isFetching={listQ.isFetching} error={queryError} onRetry={() => { listQ.refetch(); markersQ.refetch(); }}
           hasNext={!!listQ.hasNextPage} isFetchingNext={listQ.isFetchingNextPage} onLoadMore={() => listQ.fetchNextPage()}
-          selectedSlug={selectedSlug} onSelect={(s) => select(s)} detailHref={detailHref}
-          chips={chips} onRemoveChip={(id) => applyFilters(removeChip(filters, id))}
-          onResetAll={() => applyFilters({ ...EMPTY_FILTERS })}
+          selectedSlug={selectedSlug} onSelect={(s) => select(s)} onHover={setHoveredSlug} detailHref={detailHref}
+          hasFilters={chips.length > 0} onResetAll={() => applyFilters({ ...EMPTY_FILTERS })}
           sort={filters.sort} currencySelected={filters.currency !== null}
           onSort={(s) => applyFilters({ ...filters, sort: s })}
           mapUnavailable={mapFailed}
         />
       </section>
 
-      {/* Map */}
-      <section aria-label="Map" className={`${showList ? "hidden md:block" : "block"} relative row-start-2 min-h-0 md:col-start-2 md:row-span-2 md:row-start-1`}>
-        {mapFailed ? (
-          <div role="alert" className="flex h-full flex-col items-center justify-center gap-2 bg-bg p-6 text-center">
-            <TriangleAlert className="h-8 w-8 text-warn-ink" aria-hidden />
-            <p className="font-medium">The map couldn&apos;t be displayed</p>
-            <p className="max-w-sm text-sm text-ink-2">{mapFailure}. You can keep browsing every property in the list.</p>
-          </div>
-        ) : (
-          <MapViewLoader markers={markers} selectedSlug={selectedSlug} onSelect={select} initialView={urlView ?? DEFAULT_VIEW}
-            command={command} onViewChange={onViewChange}
-            onError={(msg, fatal) => { if (fatal) setMapFailure(msg); else setTileNotice(true); }} />
-        )}
-
-        {tileNotice && !mapFailed && (
-          <p role="status" className="absolute left-3 top-3 rounded bg-warn-bg px-2 py-1 text-xs text-warn-ink">Some map tiles failed to load. Properties are still listed.</p>
-        )}
-        {markersQ.data?.truncated && (
-          <p className="absolute left-3 top-3 mt-8 rounded bg-surface px-2 py-1 text-xs text-ink-2 shadow">Showing the first {markersQ.data.markers.length.toLocaleString("en")} of {markersQ.data.total.toLocaleString("en")} on the map — zoom in to see more.</p>
-        )}
-        {markersQ.isError && !mapFailed && (
-          <p role="alert" className="absolute left-3 top-3 rounded bg-danger-soft px-2 py-1 text-xs text-danger">Couldn&apos;t refresh map markers.</p>
-        )}
-
-        {selected && !showList && (
-          <div className="pointer-events-none absolute inset-x-3 bottom-20 z-10 md:inset-x-auto md:bottom-4 md:left-4 md:w-[380px]">
-            <SelectedPreview property={selected} detailHref={detailHref(selected.slug)} onClose={() => select(null)} />
-          </div>
-        )}
-      </section>
-
       {/* Mobile map/list switch */}
       {!mapFailed && (
         <div className="pointer-events-none absolute inset-x-0 bottom-safe z-20 flex justify-center md:hidden">
-          <button type="button" onClick={() => setMobileView(showList ? "map" : "list")}
-            className="pointer-events-auto inline-flex h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white shadow-lg">
-            {showList ? <><MapIcon className="h-4 w-4" aria-hidden /> Map</> : <><List className="h-4 w-4" aria-hidden /> List{total !== null ? ` (${total})` : ""}</>}
-          </button>
+          <div role="group" aria-label="Map or list" className="pointer-events-auto inline-flex rounded-xl border border-line bg-surface p-1 shadow-float">
+            <button type="button" aria-pressed={!showList} onClick={() => setMobileView("map")}
+              className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-body font-medium ${!showList ? "bg-ink text-white" : "text-ink-2"}`}>
+              <MapIcon className="h-4 w-4" aria-hidden /> Map
+            </button>
+            <button type="button" aria-pressed={showList} onClick={() => setMobileView("list")}
+              className={`inline-flex h-10 items-center gap-2 rounded-lg px-4 text-body font-medium ${showList ? "bg-ink text-white" : "text-ink-2"}`}>
+              <List className="h-4 w-4" aria-hidden /> List{total !== null ? ` (${total})` : ""}
+            </button>
+          </div>
         </div>
       )}
 

@@ -12,6 +12,8 @@ export interface MapCommand {
 export interface MapViewProps {
   markers: Marker[];
   selectedSlug: string | null;
+  hoveredSlug: string | null;
+  onHover: (slug: string | null) => void;
   onSelect: (slug: string | null) => void;
   initialView: ViewState;
   command: MapCommand | null;

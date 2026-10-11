@@ -8,6 +8,11 @@ test.describe("discovery journey", () => {
     // 1-2. open explore, map and results load
     await openExplore(page);
     await expect(page.getByTestId("map")).toBeVisible();
+    // photos really render: no endless skeleton and no "image unavailable" fallback on the first card
+    const first = page.getByTestId("property-card").first();
+    await expect(first.locator("img")).toBeVisible();
+    await expect(first.locator(".skeleton")).toHaveCount(0);
+    await expect(first.getByText("Image unavailable")).toHaveCount(0);
     await expect(page.getByTestId("result-count")).toContainText("properties in this area");
 
     // 3. apply a price filter (USD up to 250k)
@@ -21,7 +26,7 @@ test.describe("discovery journey", () => {
     await expect(page.getByRole("list", { name: "Active filters" })).toContainText("USD up to 250K");
 
     // every visible card respects the filter (prices are USD and ≤ 250,000)
-    const prices = await page.getByTestId("property-card").locator("p.text-lg").allTextContents();
+    const prices = await page.getByTestId("card-price").allTextContents();
     expect(prices.length).toBeGreaterThan(0);
     for (const p of prices) {
       expect(p.startsWith("$")).toBe(true);
@@ -86,7 +91,7 @@ test.describe("discovery journey", () => {
     await expect(page).toHaveURL(/neighborhood=sabail/);
     await expect(page.getByTestId("property-card").first()).toBeVisible();
     await expect(page.getByRole("list", { name: "Active filters" })).toContainText("Sabail");
-    const where = await page.getByTestId("property-card").locator("p:has(svg.lucide-map-pin)").allTextContents();
+    const where = await page.getByTestId("card-location").allTextContents();
     expect(where.length).toBeGreaterThan(0);
     for (const w of where) expect(w).toContain("Sabail");
   });

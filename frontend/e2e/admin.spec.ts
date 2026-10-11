@@ -66,6 +66,6 @@ test.describe("administrator", () => {
     await expect(link).toBeVisible();
     await link.click();
     await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
-    await expect(page.getByText("$123,456")).toBeVisible();
+    await expect(page.getByText("$123,456").first()).toBeVisible();
   });
 });

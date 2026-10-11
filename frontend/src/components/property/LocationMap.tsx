@@ -21,7 +21,7 @@ export default function LocationMap({ latitude, longitude, approximate }: { lati
       return;
     }
     map.addControl(new NavigationControl({ showCompass: false }), "bottom-right");
-    new Marker({ color: "#0f5f5a" }).setLngLat([longitude, latitude]).addTo(map);
+    new Marker({ color: "#526c63" }).setLngLat([longitude, latitude]).addTo(map);
     map.on("error", () => setFailed(true));
     return () => map.remove();
   }, [latitude, longitude, approximate]);

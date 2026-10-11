@@ -56,7 +56,7 @@ export default function SearchBox({ onPick }: { onPick: (s: Suggestion) => void 
         aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
         autoComplete="off"
         value={text}
-        placeholder="Search a neighborhood or landmark"
+        placeholder="Search Baku neighborhoods"
         onChange={(e) => { setText(e.target.value); setOpen(true); setActive(-1); }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
@@ -65,7 +65,7 @@ export default function SearchBox({ onPick }: { onPick: (s: Suggestion) => void 
           else if (e.key === "Enter" && active >= 0 && options[active]) { e.preventDefault(); pick(options[active]); }
           else if (e.key === "Escape") setOpen(false);
         }}
-        className="h-10 w-full rounded-md border border-line-2 bg-surface pl-9 pr-8 text-sm placeholder:text-ink-3"
+        className="h-10 w-full rounded-md border border-line-2 bg-surface pl-9 pr-8 text-body placeholder:text-ink-3"
       />
       {text && (
         <button type="button" aria-label="Clear search" onClick={() => { setText(""); setDebounced(""); }}
@@ -74,18 +74,18 @@ export default function SearchBox({ onPick }: { onPick: (s: Suggestion) => void 
         </button>
       )}
       <ul id={listId} role="listbox" hidden={!(open && debounced.length >= 2)}
-        className="absolute left-0 right-0 top-11 z-30 max-h-72 overflow-auto rounded-md border border-line bg-surface py-1 shadow-lg">
+        className="absolute left-0 right-0 top-11 z-30 max-h-72 overflow-auto rounded-lg border border-line bg-surface py-1 shadow-float">
         {options.map((s, i) => (
           <li key={`${s.type}-${s.label}`} id={`${listId}-${i}`} role="option" aria-selected={i === active}
             onMouseDown={(e) => { e.preventDefault(); pick(s); }}
-            className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-sm ${i === active ? "bg-accent-soft" : "hover:bg-bg"}`}>
+            className={`flex min-h-10 cursor-pointer items-center gap-2 px-3 py-2 text-body ${i === active ? "bg-accent-soft" : "hover:bg-hover"}`}>
             {s.type === "neighborhood" ? <Building2 className="h-4 w-4 text-ink-3" aria-hidden /> : <MapPin className="h-4 w-4 text-ink-3" aria-hidden />}
             <span>{s.label}</span>
             <span className="ml-auto text-xs text-ink-3">{s.type === "neighborhood" ? "Neighborhood" : "Place"}</span>
           </li>
         ))}
         {options.length === 0 && (
-          <li role="presentation" className="px-3 py-2 text-sm text-ink-3">{isFetching ? "Searching…" : "No matching neighborhoods or places"}</li>
+          <li role="presentation" className="px-3 py-2 text-body text-ink-3">{isFetching ? "Searching…" : "No matching neighborhoods or places"}</li>
         )}
       </ul>
     </div>

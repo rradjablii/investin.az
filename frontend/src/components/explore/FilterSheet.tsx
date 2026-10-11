@@ -22,18 +22,18 @@ function NumberField({ label, value, onChange, step = 1, placeholder }: {
   label: string; value: number | null; onChange: (n: number | null) => void; step?: number; placeholder?: string;
 }) {
   return (
-    <label className="block text-sm">
+    <label className="block text-body">
       <span className="mb-1 block text-ink-2">{label}</span>
       <input type="number" inputMode="decimal" min={0} step={step} value={value ?? ""} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-        className="h-10 w-full rounded-md border border-line-2 bg-surface px-3" />
+        className="h-10 w-full rounded-md border border-line-2 bg-surface px-3 text-body" />
     </label>
   );
 }
 
 function BedroomSelect({ label, value, onChange }: { label: string; value: number | null; onChange: (n: number | null) => void }) {
   return (
-    <label className="block text-sm">
+    <label className="block text-body">
       <span className="mb-1 block text-ink-2">{label}</span>
       <select value={value ?? ""} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
         className="h-10 w-full rounded-md border border-line-2 bg-surface px-2">
@@ -71,9 +71,9 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/30 sm:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId}
-        className="flex max-h-[92dvh] w-full flex-col rounded-t-xl bg-surface shadow-xl sm:max-w-lg sm:rounded-xl">
+        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-surface shadow-float sm:max-w-lg sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <h2 id={titleId} className="text-base font-semibold">Filters</h2>
           <button type="button" onClick={onClose} aria-label="Close filters" className="rounded p-1 text-ink-2 hover:bg-bg">
@@ -86,7 +86,7 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
             <legend className="mb-2 text-sm font-medium">Property type</legend>
             <div className="flex flex-wrap gap-2">
               {PROPERTY_TYPES.map((t) => (
-                <label key={t.value} className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${draft.type.includes(t.value) ? "border-accent bg-accent-soft font-medium text-accent" : "border-line-2"}`}>
+                <label key={t.value} className={`cursor-pointer rounded-md border px-3.5 py-2 text-body ${draft.type.includes(t.value) ? "border-accent bg-accent-soft font-medium text-accent-hover" : "border-line-2"}`}>
                   <input type="checkbox" className="sr-only" checked={draft.type.includes(t.value)}
                     onChange={() => set("type", toggle(draft.type, t.value))} />
                   {draft.type.includes(t.value) ? "✓ " : ""}{t.label}
@@ -99,7 +99,7 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
             <legend className="mb-2 text-sm font-medium">Asking price</legend>
             <p className="mb-2 text-xs text-ink-3">Prices are shown and filtered in the currency each listing was advertised in. They are never converted.</p>
             <div className="grid grid-cols-3 gap-3">
-              <label className="block text-sm">
+              <label className="block text-body">
                 <span className="mb-1 block text-ink-2">Currency</span>
                 <select value={draft.currency ?? ""} onChange={(e) => {
                   const c = (e.target.value || null) as Filters["currency"];
@@ -112,8 +112,8 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
               <NumberField label="Min" value={draft.minPrice} onChange={(n) => set("minPrice", n)} />
               <NumberField label="Max" value={draft.maxPrice} onChange={(n) => set("maxPrice", n)} />
             </div>
-            {errors.currency && <p role="alert" className="mt-1 text-sm text-danger">{errors.currency}</p>}
-            {errors.price && <p role="alert" className="mt-1 text-sm text-danger">{errors.price}</p>}
+            {errors.currency && <p role="alert" className="mt-1 text-body text-danger">{errors.currency}</p>}
+            {errors.price && <p role="alert" className="mt-1 text-body text-danger">{errors.price}</p>}
           </fieldset>
 
           <fieldset>
@@ -123,7 +123,7 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
               <BedroomSelect label="Max" value={draft.maxBedrooms} onChange={(n) => set("maxBedrooms", n)} />
             </div>
             <p className="mt-1 text-xs text-ink-3">Properties with an unknown bedroom count are excluded when this filter is used.</p>
-            {errors.bedrooms && <p role="alert" className="mt-1 text-sm text-danger">{errors.bedrooms}</p>}
+            {errors.bedrooms && <p role="alert" className="mt-1 text-body text-danger">{errors.bedrooms}</p>}
           </fieldset>
 
           <fieldset>
@@ -132,14 +132,14 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
               <NumberField label="Min" value={draft.minArea} onChange={(n) => set("minArea", n)} />
               <NumberField label="Max" value={draft.maxArea} onChange={(n) => set("maxArea", n)} />
             </div>
-            {errors.area && <p role="alert" className="mt-1 text-sm text-danger">{errors.area}</p>}
+            {errors.area && <p role="alert" className="mt-1 text-body text-danger">{errors.area}</p>}
           </fieldset>
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium">Construction status</legend>
             <div className="flex flex-wrap gap-2">
               {CONSTRUCTION_STATUSES.map((s) => (
-                <label key={s.value} className={`cursor-pointer rounded-full border px-3 py-1.5 text-sm ${draft.constructionStatus.includes(s.value) ? "border-accent bg-accent-soft font-medium text-accent" : "border-line-2"}`}>
+                <label key={s.value} className={`cursor-pointer rounded-md border px-3.5 py-2 text-body ${draft.constructionStatus.includes(s.value) ? "border-accent bg-accent-soft font-medium text-accent-hover" : "border-line-2"}`}>
                   <input type="checkbox" className="sr-only" checked={draft.constructionStatus.includes(s.value)}
                     onChange={() => set("constructionStatus", toggle(draft.constructionStatus, s.value))} />
                   {draft.constructionStatus.includes(s.value) ? "✓ " : ""}{s.label}
@@ -149,7 +149,7 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
           </fieldset>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm">
+            <label className="block text-body">
               <span className="mb-1 block font-medium">Neighborhood</span>
               <select value={draft.neighborhood ?? ""} onChange={(e) => set("neighborhood", e.target.value || null)}
                 className="h-10 w-full rounded-md border border-line-2 bg-surface px-2">
@@ -157,7 +157,7 @@ export default function FilterSheet({ filters, neighborhoods, onApply, onClose }
                 {neighborhoods.map((n) => <option key={n.slug} value={n.slug}>{n.name} ({n.listingCount})</option>)}
               </select>
             </label>
-            <label className="block text-sm">
+            <label className="block text-body">
               <span className="mb-1 block font-medium">Freshness</span>
               <select value={draft.freshnessDays ?? ""} onChange={(e) => set("freshnessDays", e.target.value ? Number(e.target.value) : null)}
                 className="h-10 w-full rounded-md border border-line-2 bg-surface px-2">

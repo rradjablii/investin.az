@@ -29,10 +29,10 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-xl font-semibold">Administrator accounts</h1>
+      <h1 className="text-[1.5rem] font-semibold">Administrator accounts</h1>
       {notice && <p role={notice.ok ? "status" : "alert"} className={`rounded-md p-2 text-sm ${notice.ok ? "bg-accent-soft text-accent" : "bg-danger-soft text-danger"}`}>{notice.text}</p>}
 
-      <ul className="divide-y divide-line rounded-lg border border-line bg-surface text-sm">
+      <ul className="divide-y divide-line rounded-xl border border-line bg-surface text-sm">
         {users.data.map((u) => (
           <li key={u.id} className="flex flex-wrap items-center gap-3 p-3">
             <span className="min-w-48 font-medium">{u.email}{!u.enabled && <span className="ml-2 rounded bg-line px-1.5 text-xs text-ink-2">disabled</span>}</span>
@@ -51,7 +51,7 @@ export default function AdminUsers() {
         ))}
       </ul>
 
-      <section aria-labelledby="nu" className="rounded-lg border border-line bg-surface p-4">
+      <section aria-labelledby="nu" className="rounded-xl border border-line bg-surface p-4">
         <h2 id="nu" className="text-lg font-semibold">Add a user</h2>
         <form className="mt-3 grid gap-2 sm:grid-cols-4" onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget; const d = new FormData(f); create.mutate({ email: d.get("email"), password: d.get("password"), role: d.get("role") }); f.reset(); }}>
           <input name="email" type="email" required placeholder="Email" aria-label="Email" className={field} />
@@ -62,7 +62,7 @@ export default function AdminUsers() {
         <p className="mt-2 text-xs text-ink-3">Editors can draft and submit listings for review; only administrators publish, archive, manage sources and users. Role changes and disabling take effect immediately, ending the person&apos;s current session.</p>
       </section>
 
-      <section aria-labelledby="cp" className="rounded-lg border border-line bg-surface p-4">
+      <section aria-labelledby="cp" className="rounded-xl border border-line bg-surface p-4">
         <h2 id="cp" className="text-lg font-semibold">Change your password</h2>
         <form className="mt-3 grid gap-2 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); const f = e.currentTarget; const d = new FormData(f); change.mutate({ currentPassword: d.get("current"), newPassword: d.get("next") }); f.reset(); }}>
           <input name="current" type="password" required autoComplete="current-password" placeholder="Current password" aria-label="Current password" className={field} />
