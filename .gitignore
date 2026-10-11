@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+target/
+backend/data/
+data/
+*.log
+.idea/
+.DS_Store
+test-results/
+playwright-report/
+public/maplibre/

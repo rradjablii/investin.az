@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Fictional demonstration image">
+<rect width="1200" height="800" fill="#efe0e0"/>
+<g fill="none" stroke="#8a3b3b" stroke-width="6" opacity=".55"><rect x="360" y="300" width="480" height="300"/><path d="M330 300 600 150 870 300"/><rect x="540" y="430" width="120" height="170"/></g>
+<text x="600" y="690" font-family="sans-serif" font-size="34" text-anchor="middle" fill="#8a3b3b">DEMONSTRATION IMAGE · not a real property photograph</text>
+</svg>

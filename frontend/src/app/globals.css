@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #fafaf9;
+  --color-surface: #ffffff;
+  --color-ink: #1c1917;
+  --color-ink-2: #57534e;
+  --color-ink-3: #78716c;
+  --color-line: #e7e5e4;
+  --color-line-2: #d6d3d1;
+  --color-accent: #0f5f5a;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e6f2f1;
+  --color-warn-bg: #fef3c7;
+  --color-warn-ink: #78350f;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef0ee;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible keyboard focus everywhere (WCAG 2.4.7 / 2.4.11). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+.maplibregl-map { font-family: var(--font-sans); }
+.maplibregl-ctrl-attrib { font-size: 11px; }
+
+/* Safe areas for notched phones */
+.pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+.bottom-safe { bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, #efedeb 25%, #f7f6f5 37%, #efedeb 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}

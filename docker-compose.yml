@@ -1,0 +1,54 @@
+# Local development stack. Run `docker compose up -d db` for just the database.
+services:
+  db:
+    image: imresamu/postgis:17-3.5-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-investin}
+      POSTGRES_USER: ${POSTGRES_USER:-investin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-investin} -d ${POSTGRES_DB:-investin}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    profiles: ["full"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DATABASE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-investin}
+      DATABASE_USER: ${POSTGRES_USER:-investin}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      ADMIN_BOOTSTRAP_EMAIL: ${ADMIN_BOOTSTRAP_EMAIL:-}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD:-}
+      STORAGE_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_MAP_STYLE_URL: ${NEXT_PUBLIC_MAP_STYLE_URL:-https://tiles.openfreemap.org/styles/positron}
+        BACKEND_URL: http://backend:8080
+    profiles: ["full"]
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  dbdata:
+  uploads:

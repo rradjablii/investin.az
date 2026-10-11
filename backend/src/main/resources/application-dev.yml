@@ -1,0 +1,4 @@
+# Dev profile: also loads the FICTIONAL demonstration dataset (db/dev). Never enable in production.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/dev

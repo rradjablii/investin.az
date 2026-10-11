@@ -1,0 +1,5 @@
+app:
+  rate-limit-enabled: false
+  storage-dir: ${java.io.tmpdir}/investin-test-uploads
+  admin-bootstrap-email: ""
+  admin-bootstrap-password: ""
