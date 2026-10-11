@@ -9,6 +9,8 @@ test("a strict nonce-based CSP is sent and nothing we ship violates it", async (
   expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
   expect(csp).toContain("object-src 'none'");
   expect(csp).toContain("frame-ancestors 'none'");
+  // plain-http (local) visitors must not be told to upgrade: Safari then loads the page without its CSS/JS
+  expect(csp).not.toContain("upgrade-insecure-requests");
   await openExplore(page); // map, workers, tiles all load under the policy
   const slug = (await (await page.request.get(`${process.env.BACKEND_URL ?? "http://localhost:8080"}/api/v1/properties?size=1`)).json()).items[0].slug;
   await page.goto(`/properties/${slug}`);

@@ -17,6 +17,9 @@ function mapOrigins(): string {
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const dev = process.env.NODE_ENV === "development";
+  // Only upgrade when the visitor is really on HTTPS (directly or behind a TLS-terminating proxy). Sending it over plain
+  // http://localhost makes Safari rewrite asset URLs to https and the page loads without CSS/JS.
+  const https = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
   const map = mapOrigins();
   const csp = [
     "default-src 'self'",
@@ -31,7 +34,7 @@ export function proxy(request: NextRequest) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    ...(dev ? [] : ["upgrade-insecure-requests"]),
+    ...(!dev && https ? ["upgrade-insecure-requests"] : []),
   ].join("; ");
 
   const headers = new Headers(request.headers);
